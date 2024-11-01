@@ -969,7 +969,7 @@ function waCheckPortOpen() {
     # Obtain Windows VM IP Address (FOR 'libvirt' ONLY)
     # Note: 'RDP_IP' should not be empty if 'WAFLAVOR' is 'docker', since it is set to localhost before this function is called.
     if [ -z "$RDP_IP" ] && [ "$WAFLAVOR" = "libvirt" ]; then
-        VM_MAC=$(virsh -c qemu:///system  domiflist "$VM_NAME" | grep -oE "([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})") # VM MAC address.
+        VM_MAC=$(virsh -c qemu:///system domiflist "$VM_NAME" | grep -oE "([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})") # VM MAC address.
         RDP_IP=$(ip neigh show | grep "$VM_MAC" | grep -oE "([0-9]{1,3}\.){3}[0-9]{1,3}")         # VM IP address.
 
         if [ -z "$RDP_IP" ]; then
