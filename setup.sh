@@ -702,7 +702,7 @@ function waCheckInstallDependencies() {
 
     # 'libvirt'/'virt-manager' + 'iproute2'.
     if [ "$WAFLAVOR" = "libvirt" ]; then
-        if ! command -v virsh &>/dev/null; then
+        if ! command -v virsh -c qemu:///system  &>/dev/null; then
             # Complete the previous line.
             echo -e "${FAIL_TEXT}Failed!${CLEAR_TEXT}\n"
 
@@ -846,11 +846,11 @@ function waCheckVMRunning() {
 
     # Obtain VM Status
     VM_PAUSED=0
-    virsh list --state-paused | grep -wq "$VM_NAME" || VM_PAUSED="$?"
+    virsh -c qemu:///system  list --state-paused | grep -wq "$VM_NAME" || VM_PAUSED="$?"
     VM_RUNNING=0
-    virsh list --state-running | grep -wq "$VM_NAME" || VM_RUNNING="$?"
+    virsh -c qemu:///system  list --state-running | grep -wq "$VM_NAME" || VM_RUNNING="$?"
     VM_SHUTOFF=0
-    virsh list --state-shutoff | grep -wq "$VM_NAME" || VM_SHUTOFF="$?"
+    virsh -c qemu:///system  list --state-shutoff | grep -wq "$VM_NAME" || VM_SHUTOFF="$?"
 
     if [[ $VM_SHUTOFF == "0" ]]; then
         # Complete the previous line.
@@ -865,7 +865,7 @@ function waCheckVMRunning() {
         # Display the suggested action(s).
         echo "--------------------------------------------------------------------------------"
         echo "Please run the below command to start the Windows VM:"
-        echo -e "${COMMAND_TEXT}virsh start ${VM_NAME}${CLEAR_TEXT}"
+        echo -e "${COMMAND_TEXT}virsh -c qemu:///system  start ${VM_NAME}${CLEAR_TEXT}"
         echo "--------------------------------------------------------------------------------"
 
         # Terminate the script.
@@ -883,7 +883,7 @@ function waCheckVMRunning() {
         # Display the suggested action(s).
         echo "--------------------------------------------------------------------------------"
         echo "Please run the below command to resume the Windows VM:"
-        echo -e "${COMMAND_TEXT}virsh resume ${VM_NAME}${CLEAR_TEXT}"
+        echo -e "${COMMAND_TEXT}virsh -c qemu:///system  resume ${VM_NAME}${CLEAR_TEXT}"
         echo "--------------------------------------------------------------------------------"
 
         # Terminate the script.
@@ -969,7 +969,7 @@ function waCheckPortOpen() {
     # Obtain Windows VM IP Address (FOR 'libvirt' ONLY)
     # Note: 'RDP_IP' should not be empty if 'WAFLAVOR' is 'docker', since it is set to localhost before this function is called.
     if [ -z "$RDP_IP" ] && [ "$WAFLAVOR" = "libvirt" ]; then
-        VM_MAC=$(virsh domiflist "$VM_NAME" | grep -oE "([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})") # VM MAC address.
+        VM_MAC=$(virsh -c qemu:///system  domiflist "$VM_NAME" | grep -oE "([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})") # VM MAC address.
         RDP_IP=$(ip neigh show | grep "$VM_MAC" | grep -oE "([0-9]{1,3}\.){3}[0-9]{1,3}")         # VM IP address.
 
         if [ -z "$RDP_IP" ]; then

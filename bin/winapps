@@ -321,74 +321,74 @@ function waCheckVMRunning() {
 
     # Attempt to run the Windows virtual machine.
     # Note: States 'running' and 'idle' do not require intervention, and are not checked for.
-    if (virsh list --all --name | xargs | grep -wq "$VM_NAME"); then
-        if (virsh list --state-shutoff --name | xargs | grep -wq "$VM_NAME"); then
+    if (virsh -c qemu:///system list --all --name | xargs | grep -wq "$VM_NAME"); then
+        if (virsh -c qemu:///system list --state-shutoff --name | xargs | grep -wq "$VM_NAME"); then
             dprint "WINDOWS SHUT OFF. BOOTING WINDOWS."
             notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Booting Windows."
-            virsh start "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_START
-            if (virsh list --state-paused --name | xargs | grep -wq "$VM_NAME"); then
+            virsh -c qemu:///system start "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_START
+            if (virsh -c qemu:///system list --state-paused --name | xargs | grep -wq "$VM_NAME"); then
                 dprint "WINDOWS PAUSED. RESUMING WINDOWS."
                 notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Resuming Windows."
-                virsh resume "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_RESUME
+                virsh -c qemu:///system resume "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_RESUME
             fi
-        elif (virsh list --state-paused --name | xargs | grep -wq "$VM_NAME"); then
+        elif (virsh -c qemu:///system list --state-paused --name | xargs | grep -wq "$VM_NAME"); then
             dprint "WINDOWS PAUSED. RESUMING WINDOWS."
             notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Resuming Windows."
-            virsh resume "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_RESUME
-        elif (virsh list --state-other --name | xargs | grep -wq "$VM_NAME"); then
-            if (virsh domstate "$VM_NAME" | xargs | grep -wq "shutdown"); then
+            virsh -c qemu:///system resume "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_RESUME
+        elif (virsh -c qemu:///system list --state-other --name | xargs | grep -wq "$VM_NAME"); then
+            if (virsh -c qemu:///system domstate "$VM_NAME" | xargs | grep -wq "shutdown"); then
                 dprint "WINDOWS SHUTTING DOWN. WAITING."
                 notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Windows is currently shutting down.\nIt will automatically restart once the shutdown process is complete."
                 EXIT_STATUS=$EC_SD_TIMEOUT
                 while (( TIME_ELAPSED < TIME_LIMIT )); do
-                    if (virsh list --state-shutoff --name | xargs | grep -wq "$VM_NAME"); then
+                    if (virsh -c qemu:///system list --state-shutoff --name | xargs | grep -wq "$VM_NAME"); then
                         EXIT_STATUS=0
                         dprint "WINDOWS SHUT OFF. BOOTING WINDOWS."
                         notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Booting Windows."
-                        virsh start "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_START
+                        virsh -c qemu:///system start "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_START
                         break
                     fi
                     sleep $TIME_INTERVAL
                     TIME_ELAPSED=$((TIME_ELAPSED + TIME_INTERVAL))
                 done
-            elif (virsh domstate "$VM_NAME" | xargs | grep -wq "crashed"); then
+            elif (virsh -c qemu:///system domstate "$VM_NAME" | xargs | grep -wq "crashed"); then
                 dprint "WINDOWS CRASHED. DESTROYING WINDOWS."
                 notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Windows experienced an unexpected crash.\nAttempting to restart Windows."
-                virsh destroy "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_DESTROY
+                virsh -c qemu:///system destroy "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_DESTROY
                 if [ "$EXIT_STATUS" -eq 0 ]; then
                     dprint "WINDOWS DESTROYED. BOOTING WINDOWS."
                     notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Booting Windows."
-                    virsh start "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_START
+                    virsh -c qemu:///system start "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_START
                 fi
-            elif (virsh domstate "$VM_NAME" | xargs | grep -wq "dying"); then
+            elif (virsh -c qemu:///system domstate "$VM_NAME" | xargs | grep -wq "dying"); then
                 dprint "WINDOWS DYING. WAITING."
                 notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Windows is currently shutting down unexpectedly.\nIt will try to restart once the shutdown process finishes."
                 EXIT_STATUS=$EC_DIE_TIMEOUT
                 while (( TIME_ELAPSED < TIME_LIMIT )); do
-                    if (virsh domstate "$VM_NAME" | xargs | grep -wq "crashed"); then
+                    if (virsh -c qemu:///system domstate "$VM_NAME" | xargs | grep -wq "crashed"); then
                         EXIT_STATUS=0
                         dprint "WINDOWS CRASHED. DESTROYING WINDOWS."
                         notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Windows experienced an unexpected crash.\nAttempting to restart Windows."
-                        virsh destroy "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_DESTROY
+                        virsh -c qemu:///system destroy "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_DESTROY
                         if [ "$EXIT_STATUS" -eq 0 ]; then
                             dprint "WINDOWS DESTROYED. BOOTING WINDOWS."
                             notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Booting Windows."
-                            virsh start "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_START
+                            virsh -c qemu:///system start "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_START
                         fi
                         break
-                    elif (virsh list --state-shutoff --name | xargs | grep -wq "$VM_NAME"); then
+                    elif (virsh -c qemu:///system list --state-shutoff --name | xargs | grep -wq "$VM_NAME"); then
                         EXIT_STATUS=0
                         dprint "WINDOWS SHUT OFF. BOOTING WINDOWS."
                         notify-send --expire-time=4000 --icon="dialog-info" --app-name="WinApps" --urgency="low" "WinApps" "Booting Windows."
-                        virsh start "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_START
+                        virsh -c qemu:///system start "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_START
                         break
                     fi
                     sleep $TIME_INTERVAL
                     TIME_ELAPSED=$((TIME_ELAPSED + TIME_INTERVAL))
                 done
-            elif (virsh domstate "$VM_NAME" | xargs | grep -wq "pmsuspended" ); then
+            elif (virsh -c qemu:///system domstate "$VM_NAME" | xargs | grep -wq "pmsuspended" ); then
                 dprint "WINDOWS SUSPENDED. RESUMING WINDOWS."
-                virsh resume "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_RESUME
+                virsh -c qemu:///system resume "$VM_NAME" &>/dev/null || EXIT_STATUS=$EC_FAIL_RESUME
             fi
         fi
     else
@@ -480,7 +480,7 @@ function waCheckPortOpen() {
     # Obtain Windows VM IP Address ('libvirt' ONLY)
     # Note: 'RDP_IP' should not be empty if 'WAFLAVOR' is 'docker', since it is set to localhost before this function is called.
     if [ -z "$RDP_IP" ] && [ "$WAFLAVOR" = "libvirt" ]; then
-        VM_MAC=$(virsh domiflist "$VM_NAME" | grep -oE "([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})") # VM MAC address.
+        VM_MAC=$(virsh -c qemu:///system domiflist "$VM_NAME" | grep -oE "([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})") # VM MAC address.
 
         while (( TIME_ELAPSED < TIME_LIMIT )); do
             if [ "$TIME_ELAPSED" -eq "$TIME_INTERVAL" ]; then
@@ -658,7 +658,7 @@ function waCheckIdle() {
             elif [ "$WAFLAVOR" = "podman" ]; then
                 podman-compose --file "$COMPOSE_PATH" pause &>/dev/null
             elif [ "$WAFLAVOR" = "libvirt" ]; then
-                virsh suspend "$VM_NAME" &>/dev/null
+                virsh -c qemu:///system suspend "$VM_NAME" &>/dev/null
             fi
         fi
     fi
