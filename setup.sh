@@ -462,36 +462,55 @@ function waFixScale() {
 # Name: 'waLoadConfig'
 # Role: Loads settings specified within the WinApps configuration file.
 function waLoadConfig() {
-    # Print feedback.
-    echo -n "Attempting to load WinApps configuration file... "
+    # Print feedback
+    echo -n "Creating  WinApps configuration... "
+    echo -n ""
 
-    if [ ! -f "$CONFIG_PATH" ]; then
-        # Complete the previous line.
-        echo -e "${FAIL_TEXT}Failed!${CLEAR_TEXT}\n"
+    # Prompt for each configuration if it’s not already set
+    read -rp "Enter Windows Username (Default: user): " RDP_USER
+    RDP_USER="${RDP_USER:-user}"
 
-        # Display the error type.
-        echo -e "${ERROR_TEXT}ERROR:${CLEAR_TEXT} ${BOLD_TEXT}MISSING CONFIGURATION FILE.${CLEAR_TEXT}"
+    read -rp "Enter Windows Password (Default: pass): " RDP_PASS
+    RDP_PASS="${RDP_PASS:-pass}"
 
-        # Display the error details.
-        echo -e "${INFO_TEXT}A valid WinApps configuration file was not found.${CLEAR_TEXT}"
+    read -rp "Enter Windows Domain (leave blank if not needed): " RDP_DOMAIN
+    RDP_DOMAIN="${RDP_DOMAIN:-""}"
 
-        # Display the suggested action(s).
-        echo "--------------------------------------------------------------------------------"
-        echo -e "Please create a configuration file at ${COMMAND_TEXT}${CONFIG_PATH}${CLEAR_TEXT}."
-        echo -e "See https://github.com/winapps-org/winapps?tab=readme-ov-file#step-3-create-a-winapps-configuration-file"
-        echo "--------------------------------------------------------------------------------"
+    read -rp "Enter Windows IP Address (Default: determined by WinApps): " RDP_IP
+    RDP_IP="${RDP_IP:-""}"
 
-        # Terminate the script.
-        return "$EC_NO_CONFIG"
-    else
-        # Load the WinApps configuration file.
-        # shellcheck source=/dev/null # Exclude this file from being checked by ShellCheck.
-        source "$CONFIG_PATH"
-    fi
+    read -rp "Enter WinApps Backend (Options: docker, podman, libvirt, manual | Default: libvirt): " WAFLAVOR
+    WAFLAVOR="${WAFLAVOR:-libvirt}"
 
-    # Print feedback.
-    echo -e "${DONE_TEXT}Done!${CLEAR_TEXT}"
+    read -rp "Enter Display Scaling Factor (Options: 100, 140, 180 | Default: 100): " RDP_SCALE
+    RDP_SCALE="${RDP_SCALE:-100}"
+
+    read -rp "Enter Additional FreeRDP Flags (Default: /cert:tofu /sound /microphone): " RDP_FLAGS
+    RDP_FLAGS="${RDP_FLAGS:-"/cert:tofu /sound /microphone"}"
+
+    read -rp "Enable Multiple Monitors? (Options: true, false | Default: false): " MULTIMON
+    MULTIMON="${MULTIMON:-false}"
+
+    read -rp "Enable Debug? (Options: true, false | Default: true): " DEBUG
+    DEBUG="${DEBUG:-true}"
+
+    read -rp "Enable Auto-Pause Windows? (Options: on, off | Default: off): " AUTOPAUSE
+    AUTOPAUSE="${AUTOPAUSE:-off}"
+
+    read -rp "Enter Auto-Pause Timeout in seconds (Minimum: 20 | Default: 300): " AUTOPAUSE_TIME
+    AUTOPAUSE_TIME="${AUTOPAUSE_TIME:-300}"
+
+    read -rp "Enter FreeRDP Command (e.g., xfreerdp | leave blank to auto-detect): " FREERDP_COMMAND
+    FREERDP_COMMAND="${FREERDP_COMMAND:-""}"
+
+    # Feedback to show the configuration loaded successfully
+    echo -e "${DONE_TEXT}Configuration created successfully!${CLEAR_TEXT}"
+
+    # Optional: Display current configuration for debugging
+
+    echo -n "Configuration finished, proceding with install..."
 }
+
 
 # Name: 'waCheckScriptDependencies'
 # Role: Terminate script if dependencies are missing.
@@ -1608,7 +1627,7 @@ function waInstall() {
 
         # Display the suggested action(s).
         echo "--------------------------------------------------------------------------------"
-        echo -e "Please ensure 'WAFLAVOR' is set to 'docker', 'podman' or 'libvirt' in ${COMMAND_TEXT}${CONFIG_PATH}${CLEAR_TEXT}."
+        echo -e "Please ensure 'WAFLAVOR' is set to 'docker', 'podman' or 'libvirt' in Initial Configuration."
         echo "--------------------------------------------------------------------------------"
 
         # Terminate the script.
@@ -1735,23 +1754,43 @@ function waUninstall() {
     done
 
     # Print caveats.
-    echo -e "\n${INFO_TEXT}Please note that your WinApps configuration and the WinApps source code were not removed.${CLEAR_TEXT}"
-    echo -e "${INFO_TEXT}You can remove these manually by running:${CLEAR_TEXT}"
-    echo -e "${COMMAND_TEXT}rm -r $(dirname "$CONFIG_PATH")${CLEAR_TEXT}"
-    echo -e "${COMMAND_TEXT}rm -r ${SOURCE_PATH}${CLEAR_TEXT}\n"
+    echo -e "\n${INFO_TEXT}The WinApps source code was not removed.${CLEAR_TEXT}"
+    read -rp "Would you like to remove the source code as well? (y/N): " response
+
+    # Convert response to lowercase and check if it's 'y' or 'yes'
+    if [[ "${response,,}" =~ ^(y|yes)$ ]]; then
+        echo -e "${INFO_TEXT}Attempting to remove source code...${CLEAR_TEXT}"
+
+        # Check for sudo and remove source code
+        if sudo -v; then  # Prompts for password if not already authenticated
+            if sudo rm -r "${SOURCE_PATH}"; then
+                echo -e "${SUCCESS_TEXT}Source code removed successfully.${CLEAR_TEXT}"
+            else
+                echo -e "${FAIL_TEXT}Failed to remove source code. Check permissions or path.${CLEAR_TEXT}"
+            fi
+        else
+            echo -e "${FAIL_TEXT}Source code removal canceled due to sudo permission denial.${CLEAR_TEXT}"
+        fi
+    else
+        # Show command for manual deletion
+        echo -e "${INFO_TEXT}You can remove the source code later by running:${CLEAR_TEXT}"
+        echo -e "${COMMAND_TEXT}sudo rm -r ${SOURCE_PATH}${CLEAR_TEXT}"
+    fi
 
     # Print feedback.
     echo -e "${SUCCESS_TEXT}UNINSTALLATION COMPLETE.${CLEAR_TEXT}"
+
+
 }
 
 ### SEQUENTIAL LOGIC ###
 # Welcome the user.
 echo -e "${BOLD_TEXT}\
-################################################################################
-#                                                                              #
-#                            WinApps Install Wizard                            #
-#                                                                              #
-################################################################################
+########################################################################################
+#                                                                                      #
+#                            WinApps-Manjaro Install Wizard                            #
+#                                                                                      #
+########################################################################################
 ${CLEAR_TEXT}"
 
 # Check dependencies for the script.
